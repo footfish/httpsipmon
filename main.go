@@ -15,7 +15,9 @@ import (
 const sipUser, userAgent = "checksip", "httpsipmon/1.0"
 const httpPort = "8080"
 
-// Example demonstrating how to ping a server with an OPTIONS message.
+// Runs a http server which will send a SIP OPTIONS message each time the server is called.
+// The http server returns the status code from the remote SIP server
+// Can be used to check a remote sip servers status with http.
 func main() {
 
 	if len(os.Args) == 1 {
@@ -110,5 +112,8 @@ func sendOptions(hostAddress string) (statusCode int, err error) {
 		return 500, fmt.Errorf("can't parse response")
 	}
 
+	if msg.Status != 200 {
+		return msg.Status, fmt.Errorf("bad response from remote server")
+	}
 	return msg.Status, nil
 }
