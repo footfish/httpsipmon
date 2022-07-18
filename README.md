@@ -23,7 +23,8 @@ go install github.com/footfish/httpsipmon@latest
 ```
 ## Run it
 ```
-# assuming go install put it in go/bin
+# install path defaults to $HOME/go/bin if the GOPATH environment variable is not set.
+# ( run 'go help install' for more )
 cd go/bin 
 # connect to sip service sip.linphone.org op port 5060 
 ./httpsipmon sip.linphone.org:5060 &  

@@ -14,14 +14,16 @@ import (
 
 const sipUser, userAgent = "checksip", "httpsipmon/1.0"
 const httpPort = "8080"
+const appName = "httpsipmon"
 
-// Runs a http server which will send a SIP OPTIONS message each time the server is called.
+// Runs a http server which will send a SIP OPTIONS message each time page is fetched.
 // The http server returns the status code from the remote SIP server
 // Can be used to check a remote sip servers status with http.
 func main() {
 
 	if len(os.Args) == 1 {
-		fmt.Println("host address argument required (IP:PORT)")
+		fmt.Println(appName + " is an http server which sends OPTIONS to a SIP server and returns the response as an http status code")
+		fmt.Println("usage: " + appName + " HOST:PORT")
 		os.Exit(0)
 	}
 	hostAddress := os.Args[1]
@@ -46,7 +48,7 @@ func sipmon(hostAddress string) http.HandlerFunc {
 func sendOptions(hostAddress string) (statusCode int, err error) {
 	sock, err := net.Dial("udp", hostAddress)
 	if err != nil {
-		return 418, fmt.Errorf("failed to create socket %s", hostAddress)
+		return 418, fmt.Errorf(appName+" failed to create socket %s", hostAddress)
 	}
 
 	defer sock.Close()
@@ -97,23 +99,23 @@ func sendOptions(hostAddress string) (statusCode int, err error) {
 	var b bytes.Buffer
 	options.Append(&b)
 	if amt, err := sock.Write(b.Bytes()); err != nil || amt != b.Len() {
-		return 418, fmt.Errorf("can't write to socket %s", hostAddress)
+		return 418, fmt.Errorf(appName+" can't write to socket %s", hostAddress)
 	}
 
 	memory := make([]byte, 2048)
 	sock.SetDeadline(time.Now().Add(time.Second))
 	amt, err := sock.Read(memory)
 	if err != nil {
-		return 504, fmt.Errorf("timeout waiting for response")
+		return 504, fmt.Errorf(appName + " timeout waiting for response")
 	}
 
 	msg, err := sip.ParseMsg(memory[0:amt])
 	if err != nil {
-		return 500, fmt.Errorf("can't parse response")
+		return 500, fmt.Errorf(appName + " can't parse SIP response")
 	}
 
 	if msg.Status != 200 {
-		return msg.Status, fmt.Errorf("bad response from remote server")
+		return msg.Status, fmt.Errorf("SIP server says: " + msg.Phrase)
 	}
 	return msg.Status, nil
 }
