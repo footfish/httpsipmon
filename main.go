@@ -37,9 +37,9 @@ func sipmon(hostAddress string) http.HandlerFunc {
 		code, err := sendOptions(hostAddress)
 		w.WriteHeader(code)
 		if err != nil {
-			fmt.Fprintf(w, "response %d - %s", code, err)
+			fmt.Fprintf(w, "%d - %s", code, err)
 		} else {
-			fmt.Fprintf(w, "OK")
+			fmt.Fprintf(w, "200 - OK")
 		}
 	}
 }
@@ -48,7 +48,7 @@ func sipmon(hostAddress string) http.HandlerFunc {
 func sendOptions(hostAddress string) (statusCode int, err error) {
 	sock, err := net.Dial("udp", hostAddress)
 	if err != nil {
-		return 418, fmt.Errorf(appName+" failed to create socket %s", hostAddress)
+		return 418, fmt.Errorf("%s failed to create socket %s", appName, hostAddress)
 	}
 
 	defer sock.Close()
@@ -99,23 +99,23 @@ func sendOptions(hostAddress string) (statusCode int, err error) {
 	var b bytes.Buffer
 	options.Append(&b)
 	if amt, err := sock.Write(b.Bytes()); err != nil || amt != b.Len() {
-		return 418, fmt.Errorf(appName+" can't write to socket %s", hostAddress)
+		return 418, fmt.Errorf("%s can't write to socket %s", appName, hostAddress)
 	}
 
 	memory := make([]byte, 2048)
 	sock.SetDeadline(time.Now().Add(time.Second))
 	amt, err := sock.Read(memory)
 	if err != nil {
-		return 504, fmt.Errorf(appName + " timeout waiting for response")
+		return 504, fmt.Errorf("%s timeout waiting for response", appName)
 	}
 
 	msg, err := sip.ParseMsg(memory[0:amt])
 	if err != nil {
-		return 500, fmt.Errorf(appName + " can't parse SIP response")
+		return 500, fmt.Errorf("%s can't parse SIP response", appName)
 	}
 
 	if msg.Status != 200 {
-		return msg.Status, fmt.Errorf("SIP server says: " + msg.Phrase)
+		return msg.Status, fmt.Errorf("SIP server says: %s", msg.Phrase)
 	}
 	return msg.Status, nil
 }
